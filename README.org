@@ -1,0 +1,39 @@
+#+title: Readme
+
+I don't necessarily think that I can make an editor better than Emacs or Neovim. But I thought it might be fun to try nonetheless. Partially just as an exercise in learning how the whole thing works.
+
+* Things to try
+- Ropes
+- Generic back-end that works with both gui and tui front-ends.
+- Client/server model
+- "Everything is a buffer". Make everything you do (or, as much as possible) involve editing a buffer
+  - Expose interaction points for various plugins
+  - Provide a unified interface for all commands.
+
+* Potential Languages
+- I like Rust, and I think it's a good language to write the low-level stuff in.
+- That said, I think it's not that good for writing plugins, I would think
+- In which case, I think lua/fennel would be a good option.
+- I like the idea of as many features as possible simply being plugins that ship with the editor.
+- If I'm feeling extra spicy, I could try writing it in Carp.
+  - I don't know if it has all the benefits of writing in a lisp due to it being compiled.
+- I could also go back to my old love of Haskell.
+** TODO Try out different languages [0/5]
+*** TODO Carp
+*** TODO Fennel
+*** TODO Rust + Lua/fennel bindings
+*** TODO Haskell + lua/fennel bindings
+*** TODO Unison?
+
+* Ratatui experiment
+I'm reasonably confident that I could get an editor to work in Rust, given its community. Looking around, I found Ratatui as a good thing to base my work on - at least for initial experiments.
+** Useful links
+- [[https://crates.io/crates/ratatui][ratatui]]: a terminal ui library in rust
+- [[https://crates.io/crates/tuirealm][tuirealm]]: a component library built on top of ratatui like react or elm
+- [[https://crates.io/crates/crossterm][crossterm]]: the low-level terminal library I'm using
+- [[https://crates.io/crates/anyhow][anyhow]]: for error handling
+- GUI links
+  - [[https://github.com/iced-rs/iced][iced]]: elm-inspired gui
+  - [[https://github.com/antoyo/relm][relm]]: also elm-inspired
+  - [[https://github.com/vizia/vizia][vizia]]: another gui
+  - [[https://github.com/emilk/egui#integrations][egui]]: immediate mode gui
