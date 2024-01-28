@@ -14,10 +14,19 @@ use crossterm::{
 use ratatui::{prelude::*, widgets::*};
 
 fn main() -> Result<()> {
+    setup_panics();
     let mut terminal = setup_terminal().context("setup failed")?;
     run(&mut terminal).context("app loop failed")?;
-    restore_terminal(&mut terminal).context("restore terminal failed")?;
+    restore_terminal().context("restore terminal failed")?;
     Ok(())
+}
+
+fn setup_panics() {
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic| {
+        restore_terminal().unwrap();
+        original_hook(panic);
+    }));
 }
 
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -27,11 +36,9 @@ fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")
 }
 
-fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+fn restore_terminal() -> Result<()> {
     disable_raw_mode().context("failed to disable raw mode")?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)
-        .context("unable to switch to main screen")?;
-    terminal.show_cursor().context("unable to show cursor")
+    execute!(io::stdout(), LeaveAlternateScreen).context("unable to switch to main screen")
 }
 
 #[derive(Default, Debug)]
