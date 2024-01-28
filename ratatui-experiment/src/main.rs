@@ -32,65 +32,67 @@ fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
     terminal.show_cursor().context("unable to show cursor")
 }
 
+#[derive(Default, Debug)]
+struct App {
+    file_contents: String,
+}
+
 fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    let mut contents = String::new();
+    let mut app = App::default();
     loop {
-        terminal.draw(|frame| render_app(frame, &contents))?;
+        terminal.draw(|frame| render_app(frame, &app))?;
         match handle_input()? {
-            Some(Some(c)) => {
-                if c == '\u{0008}' {
-                    _ = contents.pop();
-                } else {
-                    contents.push(c)
-                }
-            }
-            Some(None) => break,
-            None => (),
+            Input::None => (),
+            Input::Backspace => _ = app.file_contents.pop(),
+            Input::Cancel => break,
+            Input::NormalChar(c) => app.file_contents.push(c),
         }
     }
     Ok(())
 }
 
-fn render_app(frame: &mut Frame<CrosstermBackend<Stdout>>, contents: &str) {
-    let text = Paragraph::new(contents);
+fn render_app(frame: &mut Frame<CrosstermBackend<Stdout>>, app: &App) {
+    let text = Paragraph::new(app.file_contents.clone())
+        .block(Block::default().borders(Borders::all()))
+        .wrap(Wrap { trim: true });
     frame.render_widget(text, frame.size());
 }
 
-fn handle_input() -> Result<Option<Option<char>>> {
-    if event::poll(Duration::from_millis(250)).context("event poll failed")? {
-        if let Event::Key(event) = event::read().context("event read failed")? {
-            return Ok(Some(get_char(event)?));
-        };
-    }
-    Ok(None)
+enum Input {
+    None,
+    Backspace,
+    Cancel,
+    NormalChar(char),
 }
 
-fn get_char(event: KeyEvent) -> Result<Option<char>> {
+fn handle_input() -> Result<Input> {
+    if event::poll(Duration::from_millis(250)).context("event poll failed")? {
+        if let Event::Key(event) = event::read().context("event read failed")? {
+            return get_char(event);
+        };
+    }
+    Ok(Input::None)
+}
+
+fn get_char(event: KeyEvent) -> Result<Input> {
     match event {
         KeyEvent {
             code: KeyCode::Char('c'),
             modifiers: KeyModifiers::CONTROL,
-            kind: _,
-            state: _,
-        } => Ok(None),
+            ..
+        } => Ok(Input::Cancel),
         KeyEvent {
             code: KeyCode::Backspace,
-            modifiers: _,
-            kind: _,
-            state: _,
-        } => Ok(Some('\u{0008}')),
+            ..
+        } => Ok(Input::Backspace),
         KeyEvent {
             code: KeyCode::Enter,
-            modifiers: _,
-            kind: _,
-            state: _,
-        } => Ok(Some('\n')),
+            ..
+        } => Ok(Input::NormalChar('\n')),
         KeyEvent {
             code: KeyCode::Char(c),
-            modifiers: _,
-            kind: _,
-            state: _,
-        } => Ok(Some(c)),
+            ..
+        } => Ok(Input::NormalChar(c)),
         _ => Err(Error::msg("unrecognised key event")),
     }
 }
