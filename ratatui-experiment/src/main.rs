@@ -1,9 +1,10 @@
 use std::{
     fs::{self, File},
-    io::{self, Stdout, Write},
+    io::{self, Write},
     path::Path,
     time::Duration,
 };
+use std::io::Stdout;
 
 use anyhow::{Context, Error, Result};
 use crossterm::{
@@ -59,6 +60,7 @@ impl App {
             Input::NormalChar(c) => self.add_char(c),
             Input::Save => self.input_destination = InputDestination::Save,
             Input::Open => self.input_destination = InputDestination::Open,
+            Input::New => self.new_file(),
         }
         true
     }
@@ -108,6 +110,11 @@ impl App {
                 .get_or_insert_with(String::new)
                 .push(c),
         }
+    }
+
+    fn new_file(&mut self) {
+        self.file_contents.clear();
+        self.current_file_name = None;
     }
 }
 
@@ -173,6 +180,7 @@ enum Input {
     NormalChar(char),
     Save,
     Open,
+    New,
 }
 
 fn get_input() -> Result<Input> {
@@ -201,6 +209,11 @@ fn get_char(event: KeyEvent) -> Result<Input> {
             modifiers: KeyModifiers::CONTROL,
             ..
         } => Ok(Input::Save),
+        KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        } => Ok(Input::New),
         KeyEvent {
             code: KeyCode::Backspace,
             ..
