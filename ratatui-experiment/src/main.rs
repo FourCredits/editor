@@ -123,14 +123,21 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
 }
 
 fn render_app(frame: &mut Frame, app: &App) {
-    let block = Block::default().borders(Borders::all());
     let size = frame.size();
     let text = Paragraph::new(app.file_contents.clone())
-        .block(block.clone())
+        .block(
+            Block::default()
+                .borders(Borders::all())
+                .clone()
+                .title(app.current_file_name.as_deref().unwrap_or("New file")),
+        )
         .wrap(Wrap { trim: true });
     if let Some(message) = get_message(app) {
         let layout = Layout::new(Direction::Vertical, Constraint::from_mins([3, 0])).split(size);
-        frame.render_widget(Paragraph::new(message).block(block), layout[0]);
+        frame.render_widget(
+            Paragraph::new(message).block(Block::default().borders(Borders::all())),
+            layout[0],
+        );
         frame.render_widget(text, layout[1]);
     } else {
         frame.render_widget(text, size);
