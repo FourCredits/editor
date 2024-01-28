@@ -9,25 +9,30 @@ I don't necessarily think that I can make an editor better than Emacs or Neovim.
 - "Everything is a buffer". Make everything you do (or, as much as possible) involve editing a buffer
   - Expose interaction points for various plugins
   - Provide a unified interface for all commands.
-
-* Potential Languages
+* Necessary features
+** Syntax highlighting
+** Multiple buffers
+** Modal editing
+** LSP
+* Experiments
+** TODO Potential Languages
 - I like Rust, and I think it's a good language to write the low-level stuff in.
-- That said, I think it's not that good for writing plugins, I would think
+- That said, I would think that it's not that good for writing plugins
 - In which case, I think lua/fennel would be a good option.
 - I like the idea of as many features as possible simply being plugins that ship with the editor.
 - If I'm feeling extra spicy, I could try writing it in Carp.
   - I don't know if it has all the benefits of writing in a lisp due to it being compiled.
 - I could also go back to my old love of Haskell.
-** TODO Try out different languages [0/5]
-*** TODO Carp
-*** TODO Fennel
-*** TODO Rust + Lua/fennel bindings
-*** TODO Haskell + lua/fennel bindings
-*** TODO Unison?
-
-* Ratatui experiment
+*** TODO Try out different languages [0/5]
+**** TODO Carp
+**** TODO Fennel
+**** TODO Rust + Lua/fennel bindings
+**** TODO Haskell + lua/fennel bindings
+**** TODO Unison?
+** TODO Plugins
+** TODO Ratatui experiment [0/2]
 I'm reasonably confident that I could get an editor to work in Rust, given its community. Looking around, I found Ratatui as a good thing to base my work on - at least for initial experiments.
-** Useful links
+*** Useful links
 - [[https://crates.io/crates/ratatui][ratatui]]: a terminal ui library in rust
 - [[https://crates.io/crates/tuirealm][tuirealm]]: a component library built on top of ratatui like react or elm
 - [[https://crates.io/crates/crossterm][crossterm]]: the low-level terminal library I'm using
@@ -37,3 +42,12 @@ I'm reasonably confident that I could get an editor to work in Rust, given its c
   - [[https://github.com/antoyo/relm][relm]]: also elm-inspired
   - [[https://github.com/vizia/vizia][vizia]]: another gui
   - [[https://github.com/emilk/egui#integrations][egui]]: immediate mode gui
+*** Status update 2024-01-29
+I've made actual progress on the editor! You can, in fact, use it to write text. With that said, it's /very/ bare-bones. I like the ideas of Ratatui, so if I decide that Rust is the way to go with it, than it would be a good place to start with.
+
+In terms of GUIs, I also like the look of iced. I haven't programmed in it, though, so it's a little bit up in the air. But it seems cool.
+
+Obviously there's a lot of work in front of me. I'm not sure what even to tackle next.
+*** TODO Structure in a more meaningful way
+Build for growth
+*** TODO Better error messages
