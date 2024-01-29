@@ -30,7 +30,7 @@ I don't necessarily think that I can make an editor better than Emacs or Neovim.
 **** TODO Haskell + lua/fennel bindings
 **** TODO Unison?
 ** TODO Plugins
-** TODO Ratatui experiment [0/2]
+** TODO Ratatui experiment [0/3]
 I'm reasonably confident that I could get an editor to work in Rust, given its community. Looking around, I found Ratatui as a good thing to base my work on - at least for initial experiments.
 *** Useful links
 - [[https://crates.io/crates/ratatui][ratatui]]: a terminal ui library in rust
@@ -51,3 +51,5 @@ Obviously there's a lot of work in front of me. I'm not sure what even to tackle
 *** TODO Structure in a more meaningful way
 Build for growth
 *** TODO Better error messages
+*** TODO async?
+[[https://github.com/ratatui-org/templates/blob/main/component/ratatui-counter/README.md][async template]]
