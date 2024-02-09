@@ -39,7 +39,8 @@ fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
 
 fn restore_terminal() -> Result<()> {
     disable_raw_mode().context("failed to disable raw mode")?;
-    execute!(io::stdout(), LeaveAlternateScreen).context("unable to switch to main screen")
+    execute!(io::stdout(), LeaveAlternateScreen).context("unable to switch to main screen")?;
+    Ok(())
 }
 
 #[derive(Default, Debug)]
