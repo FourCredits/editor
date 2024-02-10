@@ -1,6 +1,6 @@
 use std::{fmt::Display, fs, io};
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct State {
     pub current_file_name: Option<String>,
     pub open_file_name: Option<String>,
@@ -9,6 +9,22 @@ pub struct State {
     messages: Vec<String>,
     message_visible: bool,
     pub exited: bool,
+    pub cursor: usize,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        State {
+            current_file_name: None,
+            open_file_name: None,
+            input_destination: InputDestination::Buffer,
+            file_contents: String::new(),
+            messages: Vec::new(),
+            message_visible: false,
+            exited: false,
+            cursor: 0,
+        }
+    }
 }
 
 // input
