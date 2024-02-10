@@ -1,10 +1,4 @@
-use std::{
-    fs::{self, File},
-    io::{self, Write},
-    path::Path,
-    time::Duration,
-};
-use std::io::Stdout;
+use std::{fmt::Display, fs, io, time::Duration};
 
 use anyhow::{Context, Error, Result};
 use crossterm::{
@@ -16,9 +10,23 @@ use ratatui::{prelude::*, widgets::*};
 
 fn main() -> Result<()> {
     setup_panics();
-    let mut terminal = setup_terminal().context("setup failed")?;
-    run(&mut terminal).context("app loop failed")?;
-    restore_terminal().context("restore terminal failed")?;
+    let result = run();
+    restore_terminal().context("failed to restore terminal")?;
+    result
+}
+
+fn run() -> Result<()> {
+    let mut stdout = io::stdout();
+    enable_raw_mode().context("failed to enable raw mode")?;
+    execute!(stdout, EnterAlternateScreen).context("unable to enter alternate screen")?;
+    let mut terminal =
+        Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")?;
+    let mut app = App::default();
+    let mut should_continue = true;
+    while should_continue {
+        terminal.draw(|frame| render_app(frame, &app))?;
+        should_continue = app.accept_input(get_input()?);
+    }
     Ok(())
 }
 
@@ -28,13 +36,6 @@ fn setup_panics() {
         restore_terminal().unwrap();
         original_hook(panic);
     }));
-}
-
-fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
-    let mut stdout = io::stdout();
-    enable_raw_mode().context("failed to enable raw mode")?;
-    execute!(stdout, EnterAlternateScreen).context("unable to enter alternate screen")?;
-    Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")
 }
 
 fn restore_terminal() -> Result<()> {
@@ -49,6 +50,8 @@ struct App {
     open_file_name: Option<String>,
     input_destination: InputDestination,
     file_contents: String,
+    messages: Vec<String>,
+    message_visible: bool,
 }
 
 impl App {
@@ -56,12 +59,17 @@ impl App {
         match input {
             Input::None => (),
             Input::Backspace => self.backspace(),
-            Input::Enter => self.enter(),
+            Input::Enter => {
+                if let Err(err) = self.enter() {
+                    self.add_message(err.to_string());
+                }
+            }
             Input::Cancel => return false,
             Input::NormalChar(c) => self.add_char(c),
             Input::Save => self.input_destination = InputDestination::Save,
             Input::Open => self.input_destination = InputDestination::Open,
             Input::New => self.new_file(),
+            Input::ClearMessage => self.clear_message(),
         }
         true
     }
@@ -82,24 +90,44 @@ impl App {
         }
     }
 
-    fn enter(&mut self) {
+    fn enter(&mut self) -> Result<(), EditorError> {
         match self.input_destination {
-            InputDestination::Buffer => self.file_contents.push('\n'),
+            InputDestination::Buffer => {
+                self.file_contents.push('\n');
+                Ok(())
+            }
             InputDestination::Save => {
-                // TODO: get rid of all these unwraps
-                let path = Path::new(self.current_file_name.as_ref().unwrap());
-                let mut file = File::create(path).unwrap();
-                file.write_all(self.file_contents.as_bytes()).unwrap();
+                let result = self.save_file();
                 self.input_destination = InputDestination::Buffer;
+                self.clear_message();
+                result
             }
             InputDestination::Open => {
-                // TODO: get rid of all these unwraps
-                let path = self.open_file_name.as_ref().unwrap();
-                self.file_contents = fs::read_to_string(path).unwrap();
-                self.current_file_name = self.open_file_name.take();
+                let result = self.open_file();
                 self.input_destination = InputDestination::Buffer;
+                self.clear_message();
+                result
             }
         }
+    }
+
+    fn save_file(&mut self) -> Result<(), EditorError> {
+        let path = self
+            .current_file_name
+            .as_ref()
+            .ok_or(EditorError::NoFileSpecified)?;
+        fs::write(path, self.file_contents.as_bytes())?;
+        Ok(())
+    }
+
+    fn open_file(&mut self) -> Result<(), EditorError> {
+        let path = self
+            .open_file_name
+            .take()
+            .ok_or(EditorError::NoFileSpecified)?;
+        self.file_contents = fs::read_to_string(&path)?;
+        self.current_file_name = Some(path);
+        Ok(())
     }
 
     fn add_char(&mut self, c: char) {
@@ -117,7 +145,42 @@ impl App {
         self.file_contents.clear();
         self.current_file_name = None;
     }
+
+    fn add_message(&mut self, message: String) {
+        self.messages.push(message);
+        self.message_visible = true;
+    }
+
+    fn clear_message(&mut self) {
+        self.message_visible = false;
+    }
 }
+
+#[derive(Debug)]
+enum EditorError {
+    NoFileSpecified,
+    IoError(io::Error),
+}
+
+impl From<io::Error> for EditorError {
+    fn from(value: io::Error) -> Self {
+        Self::IoError(value)
+    }
+}
+
+impl Display for EditorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EditorError::NoFileSpecified => f.write_str("No file specified"),
+            EditorError::IoError(err) => {
+                f.write_str("IO error: ")?;
+                err.fmt(f)
+            }
+        }
+    }
+}
+
+impl std::error::Error for EditorError {}
 
 #[derive(Debug, Default, PartialEq, Eq)]
 enum InputDestination {
@@ -127,50 +190,46 @@ enum InputDestination {
     Save,
 }
 
-fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    let mut app = App::default();
-    let mut should_continue = true;
-    while should_continue {
-        terminal.draw(|frame| render_app(frame, &app))?;
-        should_continue = app.accept_input(get_input()?);
-    }
-    Ok(())
-}
-
 fn render_app(frame: &mut Frame, app: &App) {
-    let size = frame.size();
-    let text = Paragraph::new(app.file_contents.clone())
-        .block(
-            Block::default()
-                .borders(Borders::all())
-                .clone()
-                .title(app.current_file_name.as_deref().unwrap_or("New file")),
-        )
-        .wrap(Wrap { trim: true });
-    if let Some(message) = get_message(app) {
-        let layout = Layout::new(Direction::Vertical, Constraint::from_mins([3, 0])).split(size);
-        frame.render_widget(
-            Paragraph::new(message).block(Block::default().borders(Borders::all())),
-            layout[0],
-        );
-        frame.render_widget(text, layout[1]);
-    } else {
-        frame.render_widget(text, size);
+    let mut content_box = frame.size();
+    let text = paragraph_with_block(
+        app.current_file_name.as_deref().unwrap_or("New file"),
+        &app.file_contents,
+    )
+    .wrap(Wrap { trim: true });
+    if let Some(dialogue) = get_message(app) {
+        let dialogue_box = break_off_top(&mut content_box, 3);
+        frame.render_widget(dialogue, dialogue_box);
     }
+    if let Some(error) = app.messages.last().filter(|_| app.message_visible) {
+        let error_box = break_off_top(&mut content_box, 3);
+        frame.render_widget(paragraph_with_block("Error", error), error_box);
+    }
+    frame.render_widget(text, content_box);
 }
 
-fn get_message(app: &App) -> Option<String> {
+fn break_off_top(rect: &mut Rect, size: u16) -> Rect {
+    let layouts = Layout::new(Direction::Vertical, Constraint::from_mins([size, 0])).split(*rect);
+    *rect = layouts[1];
+    layouts[0]
+}
+
+fn get_message(app: &App) -> Option<Paragraph<'_>> {
     match app.input_destination {
         InputDestination::Buffer => None,
-        InputDestination::Open => Some(format!(
-            "Open file: {}",
-            app.open_file_name.as_deref().unwrap_or("")
+        InputDestination::Open => Some(paragraph_with_block(
+            "Open file...",
+            app.open_file_name.as_deref().unwrap_or(""),
         )),
-        InputDestination::Save => Some(format!(
-            "Save as: {}",
-            app.current_file_name.as_deref().unwrap_or("")
+        InputDestination::Save => Some(paragraph_with_block(
+            "Save as...",
+            app.current_file_name.as_deref().unwrap_or(""),
         )),
     }
+}
+
+fn paragraph_with_block<'a>(block_title: &'a str, content: &'a str) -> Paragraph<'a> {
+    Paragraph::new(content).block(Block::default().borders(Borders::all()).title(block_title))
 }
 
 enum Input {
@@ -182,6 +241,7 @@ enum Input {
     Save,
     Open,
     New,
+    ClearMessage,
 }
 
 fn get_input() -> Result<Input> {
@@ -215,6 +275,11 @@ fn get_char(event: KeyEvent) -> Result<Input> {
             modifiers: KeyModifiers::CONTROL,
             ..
         } => Ok(Input::New),
+        KeyEvent {
+            code: KeyCode::Char('x'),
+            modifiers: KeyModifiers::CONTROL,
+            ..
+        } => Ok(Input::ClearMessage),
         KeyEvent {
             code: KeyCode::Backspace,
             ..
