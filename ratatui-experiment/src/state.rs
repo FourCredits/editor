@@ -1,7 +1,7 @@
 use std::{fmt::Display, fs, io};
 
 #[derive(Default, Debug)]
-pub struct App {
+pub struct State {
     pub current_file_name: Option<String>,
     pub open_file_name: Option<String>,
     pub input_destination: InputDestination,
@@ -12,7 +12,7 @@ pub struct App {
 }
 
 // input
-impl App {
+impl State {
     pub fn accept_input(&mut self, input: Input) {
         match input {
             Input::None => (),
@@ -83,7 +83,7 @@ impl App {
 }
 
 // files
-impl App {
+impl State {
     fn save_file(&mut self) -> Result<(), EditorError> {
         let path = self
             .current_file_name
@@ -109,7 +109,7 @@ impl App {
 }
 
 // messages
-impl App {
+impl State {
     fn add_message(&mut self, message: String) {
         self.messages.push(message);
         self.message_visible = true;

@@ -2,7 +2,7 @@ mod state;
 mod terminal;
 mod ui;
 
-use state::App;
+use state::State;
 use terminal::TerminalUi;
 use ui::Ui;
 
@@ -15,14 +15,14 @@ fn main() -> Result<(), Error> {
         UiToUse::on_panic();
         original_hook(panic);
     }));
-    let mut app = App::default();
+    let mut app = State::default();
     let mut ui = UiToUse::setup()?;
     let result = run(&mut app, &mut ui);
     ui.finish()?;
     result
 }
 
-fn run(app: &mut App, ui: &mut UiToUse) -> Result<(), Error> {
+fn run(app: &mut State, ui: &mut UiToUse) -> Result<(), Error> {
     while !app.exited {
         ui.render(app)?;
         let input = ui.get_input()?;

@@ -15,7 +15,7 @@ use ratatui::{
 };
 
 use crate::{
-    state::{App, Input, InputDestination},
+    state::{Input, InputDestination, State},
     ui::Ui,
 };
 
@@ -38,7 +38,7 @@ impl Ui for TerminalUi {
         Ok(Self { terminal })
     }
 
-    fn render(&mut self, app: &App) -> Result<(), Self::Error> {
+    fn render(&mut self, app: &State) -> Result<(), Self::Error> {
         self.terminal.draw(|frame| render_app(frame, app))?;
         Ok(())
     }
@@ -57,17 +57,13 @@ impl Ui for TerminalUi {
     }
 }
 
-fn render_app(frame: &mut Frame, app: &App) {
+fn render_app(frame: &mut Frame, app: &State) {
     let mut content_box = frame.size();
     let text = paragraph_with_block(
         app.current_file_name.as_deref().unwrap_or("New file"),
         &app.file_contents,
     )
     .wrap(Wrap { trim: true });
-    if let Some(dialogue) = get_message(app) {
-        let dialogue_box = break_off_top(&mut content_box, 3);
-        frame.render_widget(dialogue, dialogue_box);
-    }
     if let Some(error) = app.latest_message() {
         let error_box = break_off_top(&mut content_box, 3);
         frame.render_widget(paragraph_with_block("Error", error), error_box);
@@ -96,17 +92,15 @@ fn paragraph_with_block<'a>(block_title: &'a str, content: &'a str) -> Paragraph
     Paragraph::new(content).block(Block::default().borders(Borders::all()).title(block_title))
 }
 
-fn get_message(app: &App) -> Option<Paragraph<'_>> {
+fn get_message(app: &State) -> Option<(&str, &str)> {
     match app.input_destination {
         InputDestination::Buffer => None,
-        InputDestination::Open => Some(paragraph_with_block(
-            "Open file...",
-            app.open_file_name.as_deref().unwrap_or(""),
-        )),
-        InputDestination::Save => Some(paragraph_with_block(
-            "Save as...",
-            app.current_file_name.as_deref().unwrap_or(""),
-        )),
+        InputDestination::Open => {
+            Some(("Open file...", app.open_file_name.as_deref().unwrap_or("")))
+        }
+        InputDestination::Save => {
+            Some(("Save as...", app.current_file_name.as_deref().unwrap_or("")))
+        }
     }
 }
 
