@@ -9,10 +9,11 @@ pub struct App {
     pub file_contents: String,
     messages: Vec<String>,
     message_visible: bool,
+    pub exited: bool,
 }
 
 impl App {
-    pub fn accept_input(&mut self, input: Input) -> bool {
+    pub fn accept_input(&mut self, input: Input) {
         match input {
             Input::None => (),
             Input::Backspace => self.backspace(),
@@ -21,14 +22,15 @@ impl App {
                     self.add_message(err.to_string());
                 }
             }
-            Input::Cancel => return false,
+            Input::Cancel => {
+                self.exited = true;
+            }
             Input::NormalChar(c) => self.add_char(c),
             Input::Save => self.input_destination = InputDestination::Save,
             Input::Open => self.input_destination = InputDestination::Open,
             Input::New => self.new_file(),
             Input::ClearMessage => self.clear_message(),
         }
-        true
     }
 
     fn backspace(&mut self) {

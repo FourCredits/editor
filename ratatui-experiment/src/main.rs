@@ -26,10 +26,9 @@ fn run() -> Result<()> {
     let mut terminal =
         Terminal::new(CrosstermBackend::new(stdout)).context("creating terminal failed")?;
     let mut app = App::default();
-    let mut should_continue = true;
-    while should_continue {
+    while !app.exited {
         terminal.draw(|frame| render_app(frame, &app))?;
-        should_continue = app.accept_input(get_input()?);
+        app.accept_input(get_input()?);
     }
     Ok(())
 }
