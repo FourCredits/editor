@@ -1,7 +1,6 @@
 use std::{fmt::Display, fs, io};
 
 #[derive(Default, Debug)]
-
 pub struct App {
     pub current_file_name: Option<String>,
     pub open_file_name: Option<String>,
@@ -12,6 +11,7 @@ pub struct App {
     pub exited: bool,
 }
 
+// input
 impl App {
     pub fn accept_input(&mut self, input: Input) {
         match input {
@@ -70,6 +70,20 @@ impl App {
         }
     }
 
+    fn add_char(&mut self, c: char) {
+        match self.input_destination {
+            InputDestination::Buffer => self.file_contents.push(c),
+            InputDestination::Open => self.open_file_name.get_or_insert_with(String::new).push(c),
+            InputDestination::Save => self
+                .current_file_name
+                .get_or_insert_with(String::new)
+                .push(c),
+        }
+    }
+}
+
+// files
+impl App {
     fn save_file(&mut self) -> Result<(), EditorError> {
         let path = self
             .current_file_name
@@ -88,23 +102,14 @@ impl App {
         self.current_file_name = Some(path);
         Ok(())
     }
-
-    fn add_char(&mut self, c: char) {
-        match self.input_destination {
-            InputDestination::Buffer => self.file_contents.push(c),
-            InputDestination::Open => self.open_file_name.get_or_insert_with(String::new).push(c),
-            InputDestination::Save => self
-                .current_file_name
-                .get_or_insert_with(String::new)
-                .push(c),
-        }
-    }
-
     fn new_file(&mut self) {
         self.file_contents.clear();
         self.current_file_name = None;
     }
+}
 
+// messages
+impl App {
     fn add_message(&mut self, message: String) {
         self.messages.push(message);
         self.message_visible = true;
