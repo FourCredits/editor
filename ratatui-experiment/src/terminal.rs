@@ -72,6 +72,17 @@ fn render_app(frame: &mut Frame, app: &App) {
         let error_box = break_off_top(&mut content_box, 3);
         frame.render_widget(paragraph_with_block("Error", error), error_box);
     }
+    if let Some((label, input)) = get_message(app) {
+        let dialogue_box = break_off_top(&mut content_box, 3);
+        frame.render_widget(paragraph_with_block(label, input), dialogue_box);
+        // adding one because of block borders
+        frame.set_cursor(dialogue_box.x + input.len() as u16 + 1, dialogue_box.y + 1)
+    } else {
+        frame.set_cursor(
+            content_box.x + app.file_contents.len() as u16 + 1,
+            content_box.y + 1,
+        )
+    }
     frame.render_widget(text, content_box);
 }
 

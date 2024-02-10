@@ -54,4 +54,7 @@ Build for growth
 *** DONE Better error messages
 *** TODO async?
 [[https://github.com/ratatui-org/templates/blob/main/component/ratatui-counter/README.md][async template]]
-*** TODO Show cursor
+*** PROGRESS Show cursor
+- Got a basic version done, but it doesn't handle new lines very well at all. Would have to restructure a bunch of things to get that to work, I think
+  - Represent a file as a vector of strings
+  - Store the file cursor as an x and a y position.
