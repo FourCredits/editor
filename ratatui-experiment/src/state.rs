@@ -46,12 +46,19 @@ impl State {
             Input::Open => self.input_destination = InputDestination::Open,
             Input::New => self.new_file(),
             Input::ClearMessage => self.clear_message(),
+            Input::MoveLeft => self.move_cursor_left(),
+            Input::MoveRight => self.move_cursor_right(),
         }
     }
 
     fn backspace(&mut self) {
         match self.input_destination {
-            InputDestination::Buffer => _ = self.file_contents.pop(),
+            InputDestination::Buffer => {
+                if self.cursor > 0 {
+                    self.move_cursor_left();
+                    _ = self.file_contents.remove(self.cursor);
+                }
+            }
             InputDestination::Open => {
                 if let Some(open) = &mut self.open_file_name {
                     _ = open.pop()
@@ -68,7 +75,7 @@ impl State {
     fn enter(&mut self) -> Result<(), EditorError> {
         match self.input_destination {
             InputDestination::Buffer => {
-                self.file_contents.push('\n');
+                self.add_char('\n');
                 Ok(())
             }
             InputDestination::Save => {
@@ -88,13 +95,30 @@ impl State {
 
     fn add_char(&mut self, c: char) {
         match self.input_destination {
-            InputDestination::Buffer => self.file_contents.push(c),
+            InputDestination::Buffer => {
+                self.file_contents.insert(self.cursor, c);
+                self.move_cursor_right();
+            }
             InputDestination::Open => self.open_file_name.get_or_insert_with(String::new).push(c),
             InputDestination::Save => self
                 .current_file_name
                 .get_or_insert_with(String::new)
                 .push(c),
         }
+    }
+}
+
+// cursor
+impl State {
+    fn move_cursor_left(&mut self) {
+        self.cursor = self.cursor.saturating_sub(1);
+    }
+
+    fn move_cursor_right(&mut self) {
+        self.cursor = self
+            .cursor
+            .saturating_add(1)
+            .min(self.file_contents.chars().count());
     }
 }
 
@@ -161,6 +185,8 @@ pub enum Input {
     Open,
     New,
     ClearMessage,
+    MoveLeft,
+    MoveRight,
 }
 
 #[derive(Debug)]

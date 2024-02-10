@@ -74,10 +74,7 @@ fn render_app(frame: &mut Frame, app: &State) {
         // adding one because of block borders
         frame.set_cursor(dialogue_box.x + input.len() as u16 + 1, dialogue_box.y + 1)
     } else {
-        frame.set_cursor(
-            content_box.x + app.file_contents.len() as u16 + 1,
-            content_box.y + 1,
-        )
+        frame.set_cursor(content_box.x + app.cursor as u16 + 1, content_box.y + 1)
     }
     frame.render_widget(text, content_box);
 }
@@ -106,6 +103,14 @@ fn get_message(app: &State) -> Option<(&str, &str)> {
 
 fn get_char(event: KeyEvent) -> io::Result<Input> {
     match event {
+        KeyEvent {
+            code: KeyCode::Left,
+            ..
+        } => Ok(Input::MoveLeft),
+        KeyEvent {
+            code: KeyCode::Right,
+            ..
+        } => Ok(Input::MoveRight),
         KeyEvent {
             code: KeyCode::Char('c'),
             modifiers: KeyModifiers::CONTROL,
