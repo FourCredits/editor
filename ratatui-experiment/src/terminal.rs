@@ -148,8 +148,10 @@ fn get_char(event: KeyEvent) -> io::Result<Input> {
             code: KeyCode::Char(c),
             ..
         } => Ok(Input::NormalChar(c)),
-        _ => todo!("replace this"),
-        // _ => Err(Error::msg("unrecognised key event")),
+        _ => Err(io::Error::other(format!(
+            "unrecognised key event: {:?}",
+            event
+        ))),
     }
 }
 
