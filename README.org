@@ -58,3 +58,5 @@ Build for growth
 - Got a basic version done, but it doesn't handle new lines very well at all. Would have to restructure a bunch of things to get that to work, I think
   - Represent a file as a vector of strings
   - Store the file cursor as an x and a y position.
+* Tree-sitter
+[[https://tree-sitter.github.io/tree-sitter/][Treesitter language bindings]]
